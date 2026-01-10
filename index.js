@@ -3,35 +3,71 @@ const app = express();
 
 app.use(express.json());
 
-// ================== DATA (مؤقت) ==================
+// ================== CONSTANTS ==================
+const PRICE_SAME_CITY = 25;
+const PRICE_CROSS_CITY = 45;
+const COMMISSION = 5;
+const MAX_ACTIVE_TRIPS = 5;
+
+// ================== DATA (IN MEMORY) ==================
 let trips = [];
 let captains = [
-  { id: 1, name: "Captain Ali", activeTrips: 0 },
-  { id: 2, name: "Captain Ahmed", activeTrips: 0 }
+  { id: 1, name: "Captain Magdy", phone: "01289982511", activeTrips: 0, good: 0, bad: 0 },
+  { id: 2, name: "Captain Ahmed", phone: "01000000002", activeTrips: 0, good: 0, bad: 0 }
 ];
 
 let tripIdCounter = 1;
-const MAX_ACTIVE_TRIPS = 5;
-const COMMISSION = 5;
+let captainIdCounter = 3;
 
-// ================== ROUTES ==================
-
-// الصفحة الرئيسية
+// ================== ROOT ==================
 app.get("/", (req, res) => {
   res.send("Mandobk backend شغال 🚀");
 });
 
-// إنشاء مشوار (GET للتجربة)
-app.get("/trips", (req, res) => {
-  const { pickupCity, dropoffCity } = req.query;
+// ================== CAPTAINS ==================
 
-  if (!pickupCity || !dropoffCity) {
-    return res.json({
-      message: "حط pickupCity و dropoffCity في اللينك"
-    });
+// تسجيل كابتن جديد (ذاتي)
+app.post("/captains/register", (req, res) => {
+  const { name, phone } = req.body;
+
+  if (!name || !phone) {
+    return res.status(400).json({ error: "الاسم والموبايل مطلوبين" });
   }
 
-  let price = pickupCity === dropoffCity ? 25 : 45;
+  const captain = {
+    id: captainIdCounter++,
+    name,
+    phone,
+    activeTrips: 0,
+    good: 0,
+    bad: 0
+  };
+
+  captains.push(captain);
+
+  res.json({
+    message: "تم تسجيل الكابتن بنجاح",
+    captain
+  });
+});
+
+// عرض كل الكباتن
+app.get("/captains", (req, res) => {
+  res.json(captains);
+});
+
+// ================== TRIPS ==================
+
+// إنشاء مشوار
+app.post("/trips", (req, res) => {
+  const { pickupCity, dropoffCity } = req.body;
+
+  if (!pickupCity || !dropoffCity) {
+    return res.status(400).json({ error: "حدد مدينة الاستلام والتسليم" });
+  }
+
+  const price =
+    pickupCity === dropoffCity ? PRICE_SAME_CITY : PRICE_CROSS_CITY;
 
   const trip = {
     id: tripIdCounter++,
@@ -47,57 +83,88 @@ app.get("/trips", (req, res) => {
   trips.push(trip);
 
   res.json({
-    message: "مشوار Mandobk اتعمل",
+    message: "تم إنشاء المشوار",
     trip
   });
 });
 
 // عرض كل المشاوير
-app.get("/trips/all", (req, res) => {
+app.get("/trips", (req, res) => {
   res.json(trips);
 });
 
-// ================== قبول الكابتن للمشوار ==================
-app.post("/trips/:tripId/accept", (req, res) => {
-  const tripId = parseInt(req.params.tripId);
+// ================== ACCEPT TRIP ==================
+app.post("/trips/:id/accept", (req, res) => {
+  const tripId = parseInt(req.params.id);
   const { captainId } = req.body;
 
   const trip = trips.find(t => t.id === tripId);
   const captain = captains.find(c => c.id === captainId);
 
-  if (!trip) {
-    return res.status(404).json({ error: "المشوار مش موجود" });
-  }
+  if (!trip) return res.status(404).json({ error: "المشوار غير موجود" });
+  if (!captain) return res.status(404).json({ error: "الكابتن غير موجود" });
 
   if (trip.status !== "PENDING") {
     return res.status(400).json({ error: "المشوار اتقبل قبل كده" });
   }
 
-  if (!captain) {
-    return res.status(404).json({ error: "الكابتن مش موجود" });
-  }
-
   if (captain.activeTrips >= MAX_ACTIVE_TRIPS) {
-    return res.status(400).json({
-      error: "الكابتن واصل للحد الأقصى من المشاوير"
-    });
+    return res.status(400).json({ error: "الكابتن وصل للحد الأقصى" });
   }
 
-  // قبول المشوار
   trip.status = "ACCEPTED";
   trip.captainId = captain.id;
   captain.activeTrips++;
 
   res.json({
-    message: "الكابتن قبل المشوار",
-    trip,
-    captain
+    message: "تم قبول المشوار",
+    trip
   });
 });
 
-// ================== عرض الكباتن ==================
-app.get("/captains", (req, res) => {
-  res.json(captains);
+// ================== COMPLETE TRIP ==================
+app.post("/trips/:id/complete", (req, res) => {
+  const tripId = parseInt(req.params.id);
+
+  const trip = trips.find(t => t.id === tripId);
+  if (!trip) return res.status(404).json({ error: "المشوار غير موجود" });
+
+  if (trip.status !== "ACCEPTED") {
+    return res.status(400).json({ error: "المشوار مش في حالة تنفيذ" });
+  }
+
+  const captain = captains.find(c => c.id === trip.captainId);
+  if (captain) captain.activeTrips--;
+
+  trip.status = "DONE";
+
+  res.json({
+    message: "تم إنهاء المشوار",
+    trip
+  });
+});
+
+// ================== RATE CAPTAIN ==================
+app.post("/trips/:id/rate", (req, res) => {
+  const tripId = parseInt(req.params.id);
+  const { value } = req.body; // GOOD or BAD
+
+  const trip = trips.find(t => t.id === tripId);
+  if (!trip || trip.status !== "DONE") {
+    return res.status(400).json({ error: "المشوار غير صالح للتقييم" });
+  }
+
+  const captain = captains.find(c => c.id === trip.captainId);
+  if (!captain) return res.status(404).json({ error: "الكابتن غير موجود" });
+
+  if (value === "GOOD") captain.good++;
+  else if (value === "BAD") captain.bad++;
+  else return res.status(400).json({ error: "التقييم غير صحيح" });
+
+  res.json({
+    message: "تم تسجيل التقييم",
+    captain
+  });
 });
 
 module.exports = app;

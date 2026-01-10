@@ -1,3 +1,11 @@
-export default function handler(req, res) {
-  res.status(200).json({ message: "Mandobk API شغال ✅" });
-}
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.json({ message: "Mandobk backend شغال 🚀" });
+});
+
+// مهم جدًا
+export default app;

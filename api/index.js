@@ -1,3 +1,3 @@
-module.exports = (req, res) => {
-  res.status(200).json({ ok: true, message: "Mandobk API Alive" });
-};
+export default function handler(req, res) {
+  res.status(200).json({ message: "Mandobk API شغال ✅" });
+}

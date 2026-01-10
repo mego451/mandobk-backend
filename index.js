@@ -1,7 +1,18 @@
 const express = require("express");
-const app = express();
+const mongoose = require("mongoose");
 
+const app = express();
 app.use(express.json());
+
+// ===== MongoDB Connection Test =====
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected Successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+  });
+
 
 // ================== CONSTANTS ==================
 const PRICE_SAME_CITY = 25;

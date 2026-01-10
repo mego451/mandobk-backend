@@ -9,10 +9,32 @@ app.get("/", (req, res) => {
 });
 // تجربة GET عشان المتصفح
 app.get("/trips", (req, res) => {
+  const { pickupCity, dropoffCity } = req.query;
+
+  if (!pickupCity || !dropoffCity) {
+    return res.json({
+      message: "حط pickupCity و dropoffCity في اللينك"
+    });
+  }
+
+  let price = 25;
+  if (pickupCity !== dropoffCity) {
+    price = 45;
+  }
+
+  const commission = 5;
+  const captainNet = price - commission;
+
   res.json({
-    message: "Endpoint شغال، استخدم POST عشان تنشئ مشوار"
+    pickupCity,
+    dropoffCity,
+    price,
+    commission,
+    captainNet,
+    message: "مشوار Mandobk اتعمل بنجاح"
   });
 });
+
 
 app.post("/trips", (req, res) => {
   const pickupCity = req.body.pickupCity || req.query.pickupCity;

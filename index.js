@@ -14,9 +14,9 @@ app.get("/trips", (req, res) => {
   });
 });
 
-// إنشاء مشوار جديد
 app.post("/trips", (req, res) => {
-  const { pickupCity, dropoffCity } = req.body;
+  const pickupCity = req.body.pickupCity || req.query.pickupCity;
+  const dropoffCity = req.body.dropoffCity || req.query.dropoffCity;
 
   if (!pickupCity || !dropoffCity) {
     return res.status(400).json({
@@ -41,5 +41,6 @@ app.post("/trips", (req, res) => {
     message: "تم إنشاء المشوار بنجاح"
   });
 });
+
 
 module.exports = app;

@@ -1,17 +1,25 @@
-const express = require("express");
 const mongoose = require("mongoose");
 
-const app = express();
-app.use(express.json());
+let isConnected = false;
 
-// ===== MongoDB Connection Test =====
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected Successfully");
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err.message);
-  });
+async function connectDB() {
+  if (isConnected) {
+    return;
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+
+    isConnected = true;
+    console.log("✅ MongoDB Connected (cached)");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+    throw error;
+  }
+}
 
 
 // ================== CONSTANTS ==================

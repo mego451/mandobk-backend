@@ -1,3 +1,5 @@
+console.log("ENV CHECK:", process.env.MONGO_URI ? "FOUND" : "NOT FOUND");
+
 const express = require("express");
 
 

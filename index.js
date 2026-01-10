@@ -1,26 +1,17 @@
+const express = require("express");
 const mongoose = require("mongoose");
 
-let isConnected = false;
+const app = express();
+app.use(express.json());
 
-async function connectDB() {
-  if (isConnected) {
-    return;
-  }
-
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-
-    isConnected = true;
-    console.log("✅ MongoDB Connected (cached)");
-  } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
-    throw error;
-  }
-}
-
+// ===== MongoDB Connection Test =====
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected Successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+  });
 
 // ================== CONSTANTS ==================
 const PRICE_SAME_CITY = 25;

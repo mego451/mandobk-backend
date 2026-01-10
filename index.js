@@ -7,6 +7,12 @@ app.use(express.json()); // عشان نستقبل JSON
 app.get("/", (req, res) => {
   res.send("Mandobk backend شغال 🚀");
 });
+// تجربة GET عشان المتصفح
+app.get("/trips", (req, res) => {
+  res.json({
+    message: "Endpoint شغال، استخدم POST عشان تنشئ مشوار"
+  });
+});
 
 // إنشاء مشوار جديد
 app.post("/trips", (req, res) => {

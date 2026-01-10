@@ -3,6 +3,14 @@ const express = require("express");
 
 const app = express();
 app.use(express.json());
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (e) {
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 // ===== MongoDB Connection Test =====
 const mongoose = require("mongoose");
